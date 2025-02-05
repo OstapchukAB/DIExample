@@ -1,4 +1,6 @@
 ﻿//service 2
+using System.Diagnostics.CodeAnalysis;
+
 public class Engine:IEngine
 {
     public void Start()=> Console.WriteLine("Двигатель (ДВГ) запущен");
@@ -23,7 +25,8 @@ public class Car
 {
     // Прямая зависимость: класс сам создает экземпляр Engine.
    // private Engine _engine = new Engine();
-   private readonly IEngine _engine;
+   
+    private readonly IEngine _engine;
     
     public Car(IEngine engine)
     {
@@ -44,13 +47,29 @@ public class Car
     }
 }
 
+public enum TypeEngine {ElectricEngine=1,PetrolEngine=2 }
 public class Program
 {
     public static void Main()
     {
         #region Injector
-            IEngine engine = new Engine();   // Создание сервиса
-            Car car = new Car(engine);// Внедрение зависимости в клиента
+
+
+        Console.WriteLine("выберите тип двигателя:  1 - Электрический, 2 - ДВГ");
+        var en=Console.ReadLine();
+        var parse=int.TryParse(en, out int result);
+        if (parse ==false || result <= 0 || result > 2)
+        {
+            return;
+        }
+        // Создание сервиса
+        IEngine engine = (TypeEngine)result switch
+        {
+            TypeEngine.ElectricEngine => new EngineElectric(),
+            TypeEngine.PetrolEngine => new Engine(),
+            _ => throw new NotImplementedException(),
+        };
+        Car car = new Car(engine);// Внедрение зависимости в клиента
         #endregion
         
         car.StartCar();
