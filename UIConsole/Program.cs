@@ -1,6 +1,8 @@
-﻿//service 2
-using System.Diagnostics.CodeAnalysis;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System.Security.Authentication.ExtendedProtection;
 
+
+//service 2
 public class Engine:IEngine
 {
     public void Start()=> Console.WriteLine("Двигатель (ДВГ) запущен");
@@ -23,8 +25,6 @@ public interface IEngine
 //client
 public class Car
 {
-    // Прямая зависимость: класс сам создает экземпляр Engine.
-   // private Engine _engine = new Engine();
    
     private readonly IEngine _engine;
     
@@ -52,29 +52,30 @@ public class Program
 {
     public static void Main()
     {
-        #region Injector
 
 
-        Console.WriteLine("выберите тип двигателя:  1 - Электрический, 2 - ДВГ");
-        var en=Console.ReadLine();
-        var parse=int.TryParse(en, out int result);
-        if (parse ==false || result <= 0 || result > 2)
-        {
-            return;
-        }
-        // Создание сервиса
-        IEngine engine = (TypeEngine)result switch
-        {
-            TypeEngine.ElectricEngine => new EngineElectric(),
-            TypeEngine.PetrolEngine => new Engine(),
-            _ => throw new NotImplementedException(),
-        };
-        Car car = new Car(engine);// Внедрение зависимости в клиента
-        #endregion
-        
+        // Создаем коллекцию сервисов (контейнер).
+        var serviceCollection = new ServiceCollection();
+
+        //Регистрируем зависимости с реализациями
+        serviceCollection.AddTransient<IEngine, Engine>();
+       // serviceCollection.AddTransient<IEngine, EngineElectric>();
+
+        //Регистрируем клиента
+        serviceCollection.AddTransient<Car>();
+
+        //Построение провайдера - инжектора зависимостей
+        var serviceProvider= serviceCollection.BuildServiceProvider();
+
+        //Получаем экземпляр Car с внедренной зависимостью
+        var car = serviceProvider.GetService<Car>();
+
+        //Используем объект
         car.StartCar();
         car.StarStop();
+
     }
+
 }
 
 
