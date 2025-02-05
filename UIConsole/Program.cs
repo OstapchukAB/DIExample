@@ -3,7 +3,7 @@ using System.Security.Authentication.ExtendedProtection;
 
 
 //service 2
-public class Engine:IEngine
+public class EnginePetrol:IEngine
 {
     public void Start()=> Console.WriteLine("Двигатель (ДВГ) запущен");
     public void Stop() => Console.WriteLine("Двигатель (ДВГ) остановлен");
@@ -53,26 +53,42 @@ public class Program
     public static void Main()
     {
 
+        //Таким образом, с помощью DI-контейнера мы управляем созданием зависимостей,
+        //а выбор конкретной реализации(бензиновой или электрической) происходит на этапе разрешения сервиса.
+        //Это позволяет гибко переключаться между различными реализациями в одном коде.
 
-        // Создаем коллекцию сервисов (контейнер).
-        var serviceCollection = new ServiceCollection();
 
-        //Регистрируем зависимости с реализациями
-        serviceCollection.AddTransient<IEngine, Engine>();
-       // serviceCollection.AddTransient<IEngine, EngineElectric>();
+        // Создаем коллекцию сервисов
+        var services = new ServiceCollection();
 
-        //Регистрируем клиента
-        serviceCollection.AddTransient<Car>();
+        // Регистрируем конкретные реализации двигателей.
+        // Обратите внимание, что регистрируем их как конкретные типы, а не через интерфейс IEngine,
+        // чтобы потом можно было различать их.
+        services.AddTransient<EnginePetrol>();
+        services.AddTransient<EngineElectric>();
 
-        //Построение провайдера - инжектора зависимостей
-        var serviceProvider= serviceCollection.BuildServiceProvider();
+        // Регистрируем клиента. Если Car зависит от IEngine, то его разрешение не будет однозначным,
+        // поэтому мы будем создавать Car вручную, передавая нужную реализацию.
+        services.AddTransient<Car>();
 
-        //Получаем экземпляр Car с внедренной зависимостью
-        var car = serviceProvider.GetService<Car>();
+        // Построение DI-контейнера (инжектор)
+        var serviceProvider = services.BuildServiceProvider();
 
-        //Используем объект
-        car.StartCar();
-        car.StarStop();
+        // 1. Создаем и используем Car с бензиновым двигателем
+        var petrolEngine = serviceProvider.GetService<EnginePetrol>();
+        // Здесь мы вручную создаем экземпляр Car с нужной реализацией IEngine.
+        var carWithPetrol = new Car(petrolEngine);
+        Console.WriteLine("Запуск машины с бензиновым двигателем:");
+        carWithPetrol.StartCar();
+
+        Console.WriteLine();
+
+        // 2. Создаем и используем Car с электрическим двигателем
+        var electricEngine = serviceProvider.GetService<EngineElectric>();
+        var carWithElectric = new Car(electricEngine);
+        Console.WriteLine("Запуск машины с электрическим двигателем:");
+        carWithElectric.StartCar();
+
 
     }
 
